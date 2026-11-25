@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍪 RUDOLPH'S COOKIE FACTORY</title>
+  <style>
+    :root {
+      --bg-dark: #141e18;
+      --card-bg: #1e2d24;
+      --accent-red: #d9383a;
+      --accent-green: #2e7d32;
+      --accent-gold: #f4c430;
+      --text-light: #f8f5f0;
+      --text-muted: #b8c4bc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1f3528, var(--bg-dark));
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* 눈 내리는 배경 효과 */
+    .snowflakes {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .snowflake {
+      position: absolute;
+      top: -10px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 1rem;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      to { transform: translateY(105vh); }
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 2px solid rgba(244, 196, 48, 0.3);
+      border-radius: 24px;
+      padding: 28px 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: var(--accent-gold);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 24px;
+    }
+
+    .step { display: none; animation: fadeIn 0.4s ease; }
+    .step.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-badge {
+      display: inline-block;
+      background: rgba(244, 196, 48, 0.15);
+      color: var(--accent-gold);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.25);
+      color: #fff;
+      font-size: 1rem;
+      margin-bottom: 16px;
+      outline: none;
+    }
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--accent-gold);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      margin-top: 8px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent-red); color: #fff; }
+    .btn-gold { background: var(--accent-gold); color: #1a1a1a; }
+    .btn-secondary { background: rgba(255,255,255,0.12); color: #fff; }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    /* 선택 옵션 그리드 */
+    .option-group {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+    .option-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: block;
+    }
+    .grid-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .chip {
+      padding: 10px 6px;
+      background: rgba(255,255,255,0.07);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      color: var(--text-light);
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.2s;
+    }
+    .chip.selected {
+      border-color: var(--accent-gold);
+      background: rgba(244, 196, 48, 0.18);
+      font-weight: 700;
+    }
+
+    .color-dots {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .color-dot {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .color-dot.selected {
+      border-color: #fff;
+      transform: scale(1.15);
+    }
+
+    /* 캔버스 영역 */
+    .canvas-wrapper {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      margin: 0 auto 16px;
+      background: radial-gradient(circle, #2b3f33, #17231c);
+      border-radius: 20px;
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      border-radius: 20px;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    /* 반죽 치대기 인터랙션 */
+    .dough-ball {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      margin: 16px auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      color: rgba(0,0,0,0.65);
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s;
+      box-shadow: inset -8px -8px 16px rgba(0,0,0,0.25), 0 10px 20px rgba(0,0,0,0.3);
+    }
+    .dough-ball:active {
+      transform: scale(1.15, 0.85);
+    }
+
+    /* 아이싱 & 토핑 툴바 */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      background: var(--accent-gold);
+      color: #111;
+    }
+
+    .tool-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 0.8rem;
+    }
+    .mini-btn {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    /* 선물 상자 미리보기 */
+    .gift-box-preview {
+      width: 200px;
+      height: 200px;
+      margin: 16px auto;
+      border-radius: 20px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .ribbon-v {
+      position: absolute;
+      width: 28px;
+      height: 100%;
+    }
+    .ribbon-h {
+      position: absolute;
+      height: 28px;
+      width: 100%;
+    }
+    .ribbon-bow {
+      position: relative;
+      z-index: 2;
+      font-size: 3rem;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    }
+
+    /* 루돌프 배달 애니메이션 */
+    .delivery-stage {
+      height: 120px;
+      position: relative;
+      overflow: hidden;
+      background: rgba(0,0,0,0.25);
+      border-radius: 16px;
+      margin: 16px 0;
+      display: flex;
+      align-items: center;
+    }
+    .rudolph-sleigh {
+      position: absolute;
+      left: -120px;
+      font-size: 2.6rem;
+      white-space: nowrap;
+      animation: flyAcross 2.6s ease-in-out forwards;
+    }
+    @keyframes flyAcross {
+      0% { left: -120px; transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+      100% { left: calc(100% + 20px); transform: translateY(0); }
+    }
+
+    /* 수신 화면 카드 */
+    .message-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 16px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      border: 1px dashed rgba(244, 196, 48, 0.4);
+    }
+
+    .box-open-anim {
+      animation: popOpen 0.6s ease forwards;
+    }
+    @keyframes popOpen {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.12) rotate(-3deg); }
+      100% { transform: scale(0) opacity(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="snowflakes" id="snowflakes"></div>
+
+  <div class="app-container">
+    <h1>🍪 RUDOLPH'S COOKIE FACTORY</h1>
+    <p class="subtitle">Bake your own cookie, wrap it with love, and send a little Christmas surprise!</p>
+
+    <!-- STEP 1: WELCOME -->
+    <div id="step-1" class="step active">
+      <span class="step-badge">STEP 1 · WELCOME TO THE FACTORY</span>
+      <h2>루돌프의 쿠키 공장에 오신 걸 환영해요!</h2>
+      <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:18px;">
+        직접 반죽하고 꾸민 크리스마스 쿠키를 포장해 소중한 사람에게 선물해 보세요.
+      </p>
+      <input type="text" id="sender-name" placeholder="보내는 사람(내 이름)을 입력하세요" maxlength="20" />
+      <button class="btn btn-primary" onclick="goStep(2)">쿠키 공장 입장하기 🎄</button>
+    </div>
+
+    <!-- STEP 2: MAKE YOUR DOUGH -->
+    <div id="step-2" class="step">
+      <span class="step-badge">STEP 2 · MAKE YOUR DOUGH</span>
+      <h2>쿠키 반죽 만들기</h2>
+
+      <div class="option-group">
+        <span class="option-label">1. 쿠키 모양 선택</span>
+        <div class="grid-options" id="shape-options">
+          <div class="chip selected" data-shape="circle">⚪ 동그라미</div>
+          <div class="chip" data-shape="heart">❤️ 하트</div>
+          <div class="chip" data-shape="star">⭐ 별</div>
+          <div class="chip" data-shape="gingerbread">🍪 진저맨</div>
+          <div class="chip" data-shape="tree">🎄 트리</div>
+          <div class="chip" data-shape="snowman">⛄ 눈사람</div>
+        </div>
+      </div>
+
+      <div class="option-group">
+        <span class="option-label">2. 반죽 맛(색상) 선택</span>
+        <div class="grid-options" id="dough-options">
+          <div class="chip selected" data-color="#d89b56">🧈 플레인</div>
+          <div class="chip" data-color="#5c3a21">🍫 초콜릿</div>
+          <div class="chip" data-color="#e58a9b">🍓 딸기</div>
+          <div class="chip" data-color="#6b8e4e">🍵 말차</div>
+          <div class="chip" data-color="#6872a8">🫐 블루베리</div>
+        </div>
+      </div>
+
+      <div class="option-group">
+        <span class="option-label">3. 반죽 치대기 (3번 이상 클릭해서 반죽을 완성하세요!)</span>
+        <div id="dough-ball" class="dough-ball" style="background:#d89b56;" onclick="kneadDough()">
+          톡톡 눌러주세요! (0/3)
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">이전</button>
+        <button class="btn btn-primary" id="btn-bake" onclick="goStep(3)">오븐에 굽고 꾸미기 🔥</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: DECORATE YOUR COOKIE -->
+    <div id="step-3" class="step">
+      <span class="step-badge">STEP 3 · DECORATE YOUR COOKIE</span>
+      <h2>나만의 쿠키 꾸미기</h2>
+
+      <div class="canvas-wrapper">
+        <canvas id="cookie-canvas" width="260" height="260"></canvas>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-icing" onclick="switchDecoMode('icing')">✍️ 아이싱 그리기</button>
+        <button class="tab-btn" id="tab-topping" onclick="switchDecoMode('topping')">🍬 토핑 올리기</button>
+      </div>
+
+      <!-- 아이싱 패널 -->
+      <div id="panel-icing">
+        <div class="color-dots" id="icing-colors" style="justify-content:center; margin-bottom:10px;">
+          <div class="color-dot selected" style="background:#ffffff;" data-color="#ffffff"></div>
+          <div class="color-dot" style="background:#e63946;" data-color="#e63946"></div>
+          <div class="color-dot" style="background:#2a9d8f;" data-color="#2a9d8f"></div>
+          <div class="color-dot" style="background:#f4c430;" data-color="#f4c430"></div>
+          <div class="color-dot" style="background:#3d2314;" data-color="#3d2314"></div>
+          <div class="color-dot" style="background:#ff8fab;" data-color="#ff8fab"></div>
+        </div>
+        <div class="tool-controls">
+          <label>굵기 <input type="range" id="brush-size" min="2" max="14" value="5" /></label>
+          <div>
+            <button class="mini-btn" id="btn-eraser" onclick="toggleEraser()">지우개 OFF</button>
+            <button class="mini-btn" onclick="undoAction()">↩ 실행 취소</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 토핑 패널 -->
+      <div id="panel-topping" style="display:none;">
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">
+          토핑을 고른 뒤 쿠키 위 원하는 위치를 클릭/터치하세요!
+        </p>
+        <div class="grid-options" id="topping-options">
+          <div class="chip selected" data-topping="sprinkle">🌈 스프링클</div>
+          <div class="chip" data-topping="chocochip">🤎 초코칩</div>
+          <div class="chip" data-topping="heart">💖 하트캔디</div>
+          <div class="chip" data-topping="star">🌟 별장식</div>
+          <div class="chip" data-topping="marshmallow">☁️ 마시멜로</div>
+          <div class="chip" data-topping="pearl">⚪ 진주설탕</div>
+          <div class="chip" data-topping="candy">🍬 사탕조각</div>
+        </div>
+        <div style="text-align:right; margin-top:8px;">
+          <button class="mini-btn" onclick="undoAction()">↩ 마지막 토핑 취소</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(2)">이전</button>
+        <button class="btn btn-primary" onclick="goStep(4)">선물 포장하기 🎁</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: GIFT WRAPPING -->
+    <div id="step-4" class="step">
+      <span class="step-badge">STEP 4 · GIFT WRAPPING</span>
+      <h2>선물 상자 포장 & 카드 쓰기</h2>
+
+      <div id="box-preview" class="gift-box-preview" style="background:#b91c1c;">
+        <div id="ribbon-v" class="ribbon-v" style="background:#15803d;"></div>
+        <div id="ribbon-h" class="ribbon-h" style="background:#15803d;"></div>
+        <div class="ribbon-bow">🎀</div>
+      </div>
+
+      <div class="option-group">
+        <span class="option-label">선물 상자 테마 선택</span>
+        <div class="grid-options" id="box-options">
+          <div class="chip selected" data-theme="classic">🎄 Classic</div>
+          <div class="chip" data-theme="snowy">❄️ Snowy</div>
+          <div class="chip" data-theme="pink">🎀 Sweet Pink</div>
+          <div class="chip" data-theme="gold">✨ Golden</div>
+          <div class="chip" data-theme="ginger">🏠 Gingerbread</div>
+        </div>
+      </div>
+
+      <input type="text" id="receiver-name" placeholder="받는 사람 이름" maxlength="20" />
+      <textarea id="gift-message" rows="3" placeholder="따뜻한 크리스마스 메시지를 적어주세요!" maxlength="150"></textarea>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(3)">이전</button>
+        <button class="btn btn-gold" onclick="startDelivery()">루돌프에게 배달 맡기기 🦌</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: DELIVERY SERVICE -->
+    <div id="step-5" class="step">
+      <span class="step-badge">STEP 5 · DELIVERY SERVICE</span>
+      <h2 id="delivery-title">루돌프가 선물을 배달 중이에요!</h2>
+
+      <div class="delivery-stage">
+        <div class="rudolph-sleigh" id="sleigh-anim">🛷🦌🦌💨</div>
+      </div>
+
+      <div id="share-box" style="display:none;">
+        <p style="font-size:0.9rem; margin-bottom:12px; color:var(--accent-gold);">
+          선물 포장과 배달 준비가 완료되었습니다! 아래 링크를 복사해 전달하세요.
+        </p>
+        <input type="text" id="share-url" readonly />
+        <button class="btn btn-gold" onclick="copyShareLink()">📋 선물 링크 복사하기</button>
+        <button class="btn btn-secondary" onclick="previewGiftMode()">👀 내가 만든 선물 열어보기</button>
+      </div>
+    </div>
+
+    <!-- STEP 6: GIFT RECEIVED! -->
+    <div id="step-6" class="step">
+      <span class="step-badge">🎁 CHRISTMAS GIFT ARRIVED!</span>
+      <h2 id="received-header">선물이 도착했습니다!</h2>
+
+      <!-- 상자 개봉 전 -->
+      <div id="closed-gift-area">
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">
+          상자를 클릭해서 어떤 쿠키가 들어있는지 확인해 보세요!
+        </p>
+        <div id="received-box" class="gift-box-preview" onclick="openGiftBox()">
+          <div id="rec-ribbon-v" class="ribbon-v"></div>
+          <div id="rec-ribbon-h" class="ribbon-h"></div>
+          <div class="ribbon-bow">🎀</div>
+        </div>
+      </div>
+
+      <!-- 상자 개봉 후 -->
+      <div id="opened-gift-area" style="display:none;">
+        <div class="canvas-wrapper">
+          <canvas id="received-canvas" width="260" height="260"></canvas>
+        </div>
+        <div class="message-card" id="received-message"></div>
+        <button class="btn btn-primary" style="margin-top:18px;" onclick="resetToMakeOwn()">
+          🍪 나도 쿠키 만들어 답례하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 상태 관리 객체
+    const state = {
+      sender: '',
+      receiver: '',
+      message: '',
+      shape: 'circle',
+      doughColor: '#d89b56',
+      kneadCount: 0,
+      decoMode: 'icing', // 'icing' | 'topping'
+      icingColor: '#ffffff',
+      brushSize: 5,
+      isEraser: false,
+      selectedTopping: 'sprinkle',
+      boxTheme: 'classic',
+      strokes: [],   // [{ color, size, points: [[x,y], ...] }]
+      toppings: []   // [{ type, x, y, rot }]
+    };
+
+    const BOX_THEMES = {
+      classic: { bg: '#b91c1c', ribbon: '#15803d', border: '#f4c430' },
+      snowy:   { bg: '#7dd3fc', ribbon: '#ffffff', border: '#e0f2fe' },
+      pink:    { bg: '#f472b6', ribbon: '#fce7f3', border: '#fbcfe8' },
+      gold:    { bg: '#d97706', ribbon: '#fef08a', border: '#fde047' },
+      ginger:  { bg: '#78350f', ribbon: '#dc2626', border: '#fef3c7' }
+    };
+
+    // 눈 내리는 효과 생성
+    function createSnow() {
+      const container = document.getElementById('snowflakes');
+      for (let i = 0; i < 28; i++) {
+        const flake = document.createElement('div');
+        flake.className = 'snowflake';
+        flake.textContent = '❄';
+        flake.style.left = Math.random() * 100 + 'vw';
+        flake.style.animationDuration = (4 + Math.random() * 6) + 's';
+        flake.style.animationDelay = Math.random() * 5 + 's';
+        flake.style.fontSize = (0.6 + Math.random() * 0.8) + 'rem';
+        container.appendChild(flake);
+      }
+    }
+    createSnow();
+
+    // 단계 이동
+    function goStep(stepNum) {
+      if (stepNum === 2) {
+        const name = document.getElementById('sender-name').value.trim();
+        if (!name) {
+          alert('보내는 사람 이름을 입력해 주세요!');
+          return;
+        }
+        state.sender = name;
+      }
+      if (stepNum === 3) {
+        renderCookie(document.getElementById('cookie-canvas'), state);
+      }
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      document.getElementById(`step-${stepNum}`).classList.add('active');
+    }
+
+    // 반죽 모양 선택
+    document.querySelectorAll('#shape-options .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#shape-options .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        state.shape = chip.dataset.shape;
+      });
+    });
+
+    // 반죽 색상 선택
+    document.querySelectorAll('#dough-options .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#dough-options .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        state.doughColor = chip.dataset.color;
+        document.getElementById('dough-ball').style.background = state.doughColor;
+      });
+    });
+
+    // 반죽 치대기
+    function kneadDough() {
+      state.kneadCount++;
+      const ball = document.getElementById('dough-ball');
+      if (state.kneadCount < 3) {
+        ball.textContent = `반죽 중... (${state.kneadCount}/3)`;
+      } else {
+        ball.textContent = `✨ 반죽 완성! (${state.kneadCount}회)`;
+      }
+    }
+
+    // 쿠키 모양 Path 생성
+    function drawCookieShapePath(ctx, shape, cx, cy) {
+      ctx.beginPath();
+      if (shape === 'circle') {
+        ctx.arc(cx, cy, 92, 0, Math.PI * 2);
+      } else if (shape === 'heart') {
+        ctx.moveTo(cx, cy + 75);
+        ctx.bezierCurveTo(cx - 110, cy + 10, cx - 95, cy - 85, cx, cy - 35);
+        ctx.bezierCurveTo(cx + 95, cy - 85, cx + 110, cy + 10, cx, cy + 75);
+      } else if (shape === 'star') {
+        const spikes = 5, outer = 98, inner = 46;
+        for (let i = 0; i < spikes * 2; i++) {
+          const r = i % 2 === 0 ? outer : inner;
+          const angle = (i * Math.PI) / spikes - Math.PI / 2;
+          const x = cx + Math.cos(angle) * r;
+          const y = cy + Math.sin(angle) * r;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      } else if (shape === 'tree') {
+        ctx.moveTo(cx, cy - 95);
+        ctx.lineTo(cx + 85, cy + 55);
+        ctx.lineTo(cx + 22, cy + 55);
+        ctx.lineTo(cx + 22, cy + 90);
+        ctx.lineTo(cx - 22, cy + 90);
+        ctx.lineTo(cx - 22, cy + 55);
+        ctx.lineTo(cx - 85, cy + 55);
+        ctx.closePath();
+      } else if (shape === 'snowman') {
+        ctx.arc(cx, cy - 42, 42, 0, Math.PI * 2);
+        ctx.moveTo(cx + 62, cy + 35);
+        ctx.arc(cx, cy + 35, 62, 0, Math.PI * 2);
+      } else if (shape === 'gingerbread') {
+        // 머리
+        ctx.arc(cx, cy - 52, 32, 0, Math.PI * 2);
+        // 팔 & 몸통 & 다리
+        ctx.roundRect(cx - 75, cy - 22, 150, 26, 13);
+        ctx.roundRect(cx - 32, cy - 25, 64, 75, 16);
+        ctx.roundRect(cx - 34, cy + 35, 26, 55, 13);
+        ctx.roundRect(cx + 8, cy + 35, 26, 55, 13);
+      }
+    }
+
+    // 쿠키 전체 렌더링 함수 (제작 화면 & 수신 화면 공용)
+    function renderCookie(canvas, data) {
+      const ctx = canvas.getContext('2d');
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. 쿠키 베이스 그림자 및 질감
+      ctx.save();
+      drawCookieShapePath(ctx, data.shape, cx, cy);
+      ctx.fillStyle = data.doughColor;
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 6;
+      ctx.fill();
+
+      // 구운 테두리 느낌
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = 'rgba(70, 35, 10, 0.28)';
+      ctx.stroke();
+      ctx.restore();
+
+      // 쿠키 영역 안쪽에만 아이싱이 그려지도록 클리핑
+      ctx.save();
+      drawCookieShapePath(ctx, data.shape, cx, cy);
+      ctx.clip();
+
+      // 2. 아이싱 스트로크 렌더링
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      data.strokes.forEach(stroke => {
+        if (!stroke.points || stroke.points.length === 0) return;
+        ctx.beginPath();
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.size;
+        stroke.points.forEach((pt, idx) => {
+          idx === 0 ? ctx.moveTo(pt[0], pt[1]) : ctx.lineTo(pt[0], pt[1]);
+        });
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      // 3. 토핑 렌더링
+      data.toppings.forEach(tp => {
+        ctx.save();
+        ctx.translate(tp.x, tp.y);
+        ctx.rotate(tp.rot || 0);
+        if (tp.type === 'sprinkle') {
+          ctx.fillStyle = tp.color || '#ff4d6d';
+          ctx.beginPath();
+          ctx.roundRect(-6, -2.5, 12, 5, 2.5);
+          ctx.fill();
+        } else if (tp.type === 'chocochip') {
+          ctx.fillStyle = '#3b1f0e';
+          ctx.beginPath();
+          ctx.moveTo(0, -7);
+          ctx.lineTo(7, 6);
+          ctx.lineTo(-7, 6);
+          ctx.closePath();
+          ctx.fill();
+        } else if (tp.type === 'pearl') {
+          ctx.fillStyle = '#f8fafc';
+          ctx.beginPath();
+          ctx.arc(0, 0, 5, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          const emojiMap = {
+            heart: '💖',
+            star: '⭐',
+            marshmallow: '🤍',
+            candy: '🍬'
+          };
+          ctx.font = '18px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(emojiMap[tp.type] || '✨', 0, 0);
+        }
+        ctx.restore();
+      });
+    }
+
+    // 꾸미기 모드 전환
+    function switchDecoMode(mode) {
+      state.decoMode = mode;
+      document.getElementById('tab-icing').classList.toggle('active', mode === 'icing');
+      document.getElementById('tab-topping').classList.toggle('active', mode === 'topping');
+      document.getElementById('panel-icing').style.display = mode === 'icing' ? 'block' : 'none';
+      document.getElementById('panel-topping').style.display = mode === 'topping' ? 'block' : 'none';
+    }
+
+    // 아이싱 색상 / 굵기 / 지우개
+    document.querySelectorAll('#icing-colors .color-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        document.querySelectorAll('#icing-colors .color-dot').forEach(d => d.classList.remove('selected'));
+        dot.classList.add('selected');
+        state.icingColor = dot.dataset.color;
+        state.isEraser = false;
+        document.getElementById('btn-eraser').textContent = '지우개 OFF';
+      });
+    });
+
+    document.getElementById('brush-size').addEventListener('input', (e) => {
+      state.brushSize = Number(e.target.value);
+    });
+
+    function toggleEraser() {
+      state.isEraser = !state.isEraser;
+      document.getElementById('btn-eraser').textContent = state.isEraser ? '지우개 ON' : '지우개 OFF';
+    }
+
+    document.querySelectorAll('#topping-options .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#topping-options .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        state.selectedTopping = chip.dataset.topping;
+      });
+    });
+
+    // 캔버스 드로잉 & 토핑 배치 이벤트
+    const canvas = document.getElementById('cookie-canvas');
+    let isDrawing = false;
+    const actionHistory = []; // 'stroke' | 'topping'
+
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return [
+        Math.round(clientX - rect.left),
+        Math.round(clientY - rect.top)
+      ];
+    }
+
+    function handlePointerDown(e) {
+      e.preventDefault();
+      const [x, y] = getCanvasPos(e);
+
+      if (state.decoMode === 'topping') {
+        const sprinkleColors = ['#ff4d6d', '#38bdf8', '#facc15', '#4ade80', '#c084fc'];
+        state.toppings.push({
+          type: state.selectedTopping,
+          x,
+          y,
+          rot: Number((Math.random() * Math.PI).toFixed(2)),
+          color: sprinkleColors[Math.floor(Math.random() * sprinkleColors.length)]
+        });
+        actionHistory.push('topping');
+        renderCookie(canvas, state);
+        return;
+      }
+
+      isDrawing = true;
+      const strokeColor = state.isEraser ? state.doughColor : state.icingColor;
+      state.strokes.push({
+        color: strokeColor,
+        size: state.brushSize,
+        points: [[x, y]]
+      });
+      actionHistory.push('stroke');
+      renderCookie(canvas, state);
+    }
+
+    function handlePointerMove(e) {
+      if (!isDrawing || state.decoMode !== 'icing') return;
+      e.preventDefault();
+      const [x, y] = getCanvasPos(e);
+      const currentStroke = state.strokes[state.strokes.length - 1];
+      currentStroke.points.push([x, y]);
+      renderCookie(canvas, state);
+    }
+
+    function handlePointerUp() {
+      isDrawing = false;
+    }
+
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+    canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+    canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handlePointerUp);
+
+    function undoAction() {
+      const last = actionHistory.pop();
+      if (last === 'stroke') state.strokes.pop();
+      if (last === 'topping') state.toppings.pop();
+      renderCookie(canvas, state);
+    }
+
+    // 선물 상자 테마 선택
+    document.querySelectorAll('#box-options .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#box-options .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        state.boxTheme = chip.dataset.theme;
+        const theme = BOX_THEMES[state.boxTheme];
+        const box = document.getElementById('box-preview');
+        box.style.background = theme.bg;
+        box.style.border = `3px solid ${theme.border}`;
+        document.getElementById('ribbon-v').style.background = theme.ribbon;
+        document.getElementById('ribbon-h').style.background = theme.ribbon;
+      });
+    });
+
+    // 선물 데이터 직렬화 (URL 공유용)
+    function encodeGiftData() {
+      const payload = {
+        s: state.sender,
+        r: state.receiver,
+        m: state.message,
+        sh: state.shape,
+        dc: state.doughColor,
+        bt: state.boxTheme,
+        st: state.strokes,
+        tp: state.toppings
+      };
+      const json = JSON.stringify(payload);
+      return btoa(encodeURIComponent(json));
+    }
+
+    function decodeGiftData(encoded) {
+      const json = decodeURIComponent(atob(encoded));
+      const p = JSON.parse(json);
+      return {
+        sender: p.s,
+        receiver: p.r,
+        message: p.m,
+        shape: p.sh,
+        doughColor: p.dc,
+        boxTheme: p.bt,
+        strokes: p.st || [],
+        toppings: p.tp || []
+      };
+    }
+
+    // 배달 애니메이션 및 고유 링크 생성
+    function startDelivery() {
+      const receiver = document.getElementById('receiver-name').value.trim();
+      const msg = document.getElementById('gift-message').value.trim();
+      if (!receiver) {
+        alert('받는 사람 이름을 입력해 주세요!');
+        return;
+      }
+      state.receiver = receiver;
+      state.message = msg || '메리 크리스마스! 달콤한 쿠키와 함께 행복한 연말 보내세요 🎄';
+
+      goStep(5);
+      const sleigh = document.getElementById('sleigh-anim');
+      sleigh.style.animation = 'none';
+      sleigh.offsetHeight; // reflow
+      sleigh.style.animation = 'flyAcross 2.5s ease-in-out forwards';
+
+      const encoded = encodeGiftData();
+      const baseUrl = window.location.origin + window.location.pathname;
+      const fullUrl = `${baseUrl}?gift=${encoded}`;
+      document.getElementById('share-url').value = fullUrl;
+
+      setTimeout(() => {
+        document.getElementById('delivery-title').textContent = '배달 준비 완료! 🎅';
+        document.getElementById('share-box').style.display = 'block';
+      }, 2400);
+    }
+
+    function copyShareLink() {
+      const input = document.getElementById('share-url');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        alert('선물 링크가 복사되었습니다! 카카오톡이나 메시지로 붙여넣어 보내보세요 🎁');
+      });
+    }
+
+    function previewGiftMode() {
+      loadReceivedGift(state);
+    }
+
+    // 선물 수신 모드 세팅
+    let receivedGiftData = null;
+
+    function loadReceivedGift(data) {
+      receivedGiftData = data;
+      document.getElementById('received-header').textContent =
+        `To. ${data.receiver} 님, ${data.sender} 님의 선물이에요!`;
+
+      const theme = BOX_THEMES[data.boxTheme] || BOX_THEMES.classic;
+      const box = document.getElementById('received-box');
+      box.style.background = theme.bg;
+      box.style.border = `3px solid ${theme.border}`;
+      document.getElementById('rec-ribbon-v').style.background = theme.ribbon;
+      document.getElementById('rec-ribbon-h').style.background = theme.ribbon;
+
+      document.getElementById('closed-gift-area').style.display = 'block';
+      document.getElementById('opened-gift-area').style.display = 'none';
+      goStep(6);
+    }
+
+    function openGiftBox() {
+      const box = document.getElementById('received-box');
+      box.classList.add('box-open-anim');
+      setTimeout(() => {
+        document.getElementById('closed-gift-area').style.display = 'none';
+        document.getElementById('opened-gift-area').style.display = 'block';
+        renderCookie(document.getElementById('received-canvas'), receivedGiftData);
+        document.getElementById('received-message').textContent =
+          `💌 From. ${receivedGiftData.sender}\n\n${receivedGiftData.message}`;
+      }, 500);
+    }
+
+    function resetToMakeOwn() {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      location.reload();
+    }
+
+    // 페이지 접속 시 공유 링크 파라미터(?gift=...) 확인
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const giftParam = params.get('gift');
+      if (giftParam) {
+        try {
+          const giftData = decodeGiftData(giftParam);
+          loadReceivedGift(giftData);
+        } catch (err) {
+          console.error('선물 데이터 로드 실패:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
